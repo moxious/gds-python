@@ -3,6 +3,8 @@ import json
 from neo4j import GraphDatabase
 import logging
 
+log = logging.getLogger('gds-python')
+
 class APIGenerator:
     def __init__(self, driver):
         self.driver = driver
@@ -125,11 +127,14 @@ class GDSAPI:
 
         l = len(args)
         params = {}
+        cps = []
         for i in range(0, l):
             name = "p%d" % i
             params[name] = args[i]
-            cypher = cypher + name + ", "
-        cypher = cypher + ")\n"
+            cps.append(name)
+            
+        # Add each parameter name in cypher syntax with $p0, $p1, $p2, etc.
+        cypher = cypher + ", ".join(list(map(lambda e: "$%s" % e, cps))) + ")\n"
 
         output_names = map(lambda e: e['name'], api['outputs'])
         all_outputs = ", ".join(list(output_names))
@@ -145,14 +150,14 @@ class GDSAPI:
 
         def closure(*args):
             required_arguments = list(filter(lambda e: e['required'], api['inputs']))
-            if len(args) < len(required_arguments) or len(args) > len(required_arguments):
+            if len(args) < len(required_arguments) or len(args) > len(api['inputs']):
                 raise Exception(
                     "Invalid input!  You provided %d arguments, when %d are required of %d total. The signature is %s" % (
                         len(args), len(required_arguments), len(api['inputs']),
                         json.dumps(input_signature(), indent=2)))
 
             if args:
-                logging.debug("ARGS %s" % args)
+                print("ARGS %s" % list(map(lambda e: str(e), args)))
 
             with self.driver.session() as session:
                 cypher, params = self.generate_cypher(api, args)
@@ -188,7 +193,13 @@ class GDSAPI:
             subdir_api,            
             filter(lambda i: i['name'].startswith(name + ".") or i['name'] == name, self.api)))
 
-        logging.debug("MATCHES", list(map(lambda e: e['name'], sub_api)))
+        print("MATCHES", list(map(lambda e: e['name'], sub_api)))
+        exact_match = None
+        exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
+        if len(exact_matches) > 0:
+            exact_match = exact_matches[0]
+        elif len(sub_api) == 0:
+            exact_match = sub_api[0]
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
@@ -196,13 +207,12 @@ class GDSAPI:
         if len(sub_api) == 0:
             return failure
 
-        if len(sub_api) == 1:
-            # We have found the single API call the user was after.
-            api_call = sub_api[0]
-            api_call['name'] = self.context + ".%s" % name
-            return self.generate_callable_neo4j_function(self.context + ".%s" % name, api_call)
+        if exact_match:
+            # We have found the single API call the user was after.            
+            exact_match['name'] = self.context + ".%s" % name
+            return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
-        logging.debug("METACALL %s" % name)
+        print("METACALL %s" % name)
         return GDSAPI(sub_api, self.driver, self.context + '.%s' % name)
 
 
