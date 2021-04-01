@@ -3,8 +3,6 @@ import json
 from neo4j import GraphDatabase
 import logging
 
-log = logging.getLogger('gds-python')
-
 class APIGenerator:
     def __init__(self, driver):
         self.driver = driver
@@ -104,6 +102,7 @@ class APIGenerator:
         }
 
 class GDSAPI:
+    log = logging.getLogger('gds-python')
     reserved_fields = ['api', 'driver', 'context', 'generate_callable_neo4j_function', 'generate_cypher', 'run']
 
     def __init__(self, api, driver, context='gds'):
@@ -157,11 +156,11 @@ class GDSAPI:
                         json.dumps(input_signature(), indent=2)))
 
             if args:
-                print("ARGS %s" % list(map(lambda e: str(e), args)))
+                GDSAPI.log.debug("ARGS %s" % list(map(lambda e: str(e), args)))
 
             with self.driver.session() as session:
                 cypher, params = self.generate_cypher(api, args)
-                print("RUNNING CYPHER %s WITH PARAMS %s" % (cypher, params))
+                GDSAPI.log.debug("RUNNING CYPHER %s WITH PARAMS %s" % (cypher, params))
                 # splat
                 results = session.run(cypher, **params)
 
@@ -193,7 +192,7 @@ class GDSAPI:
             subdir_api,            
             filter(lambda i: i['name'].startswith(name + ".") or i['name'] == name, self.api)))
 
-        print("MATCHES", list(map(lambda e: e['name'], sub_api)))
+        GDSAPI.log.debug("MATCHES", list(map(lambda e: e['name'], sub_api)))
         exact_match = None
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) > 0:
@@ -212,9 +211,8 @@ class GDSAPI:
             exact_match['name'] = self.context + ".%s" % name
             return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
-        print("METACALL %s" % name)
+        GDSAPI.log.debug("METACALL %s" % name)
         return GDSAPI(sub_api, self.driver, self.context + '.%s' % name)
-
 
 class GDS:
     def __init__(self, url, username, password):
