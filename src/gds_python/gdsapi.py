@@ -22,8 +22,24 @@ class GDSAPI:
         self.api = api
         self.driver = driver
 
-    def write_networkx_graph(self, G, label, batch_size=10000):
-        return adapter.write_networkx_graph(self.driver, G, label, batch_size)
+    def write_networkx_graph(self, G, label, batch_size=10000, node_properties=[]):
+        label, retG = adapter.write_networkx_graph(self.driver, G, label, batch_size)
+
+        orientation = "NATURAL"
+        if not G.is_directed(): orientation = "UNDIRECTED"
+
+        nodeProjection = {}
+        nodeProjection[str(label)] = { "properties": node_properties }
+        relProjection = {}
+        relProjection[str(label)] = { "orientation": orientation }
+        
+        try:
+            # Delete the GDS graph if it already exists.
+            self.graph.drop(str(label))
+        except: pass
+
+        gds_graph = self.graph.create(str(label), nodeProjection, relProjection)
+        return label, retG, gds_graph
 
     def read_networkx_graph(self, label, **kwargs):
         return adapter.read_networkx_graph(self.driver, label, **kwargs)
