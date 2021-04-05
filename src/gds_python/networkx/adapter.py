@@ -17,9 +17,7 @@ def destroy_graph(session, label):
 
     return session.write_transaction(generic_worker(destroy_cypher))
 
-def write_networkx_graph(driver, G, id, batch_size=10000, destroy=True):
-    label = 'NetworkX_%s' % id
-
+def write_networkx_graph(driver, G, label, batch_size=10000, destroy=True):
     merge_nodes = """
         UNWIND $batch AS event
         MERGE (i:`%s` { id: event.id })

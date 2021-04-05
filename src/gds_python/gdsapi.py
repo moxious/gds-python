@@ -22,8 +22,8 @@ class GDSAPI:
         self.api = api
         self.driver = driver
 
-    def write_networkx_graph(self, G, id, batch_size=10000):
-        return adapter.write_networkx_graph(self.driver, G, id, batch_size)
+    def write_networkx_graph(self, G, label, batch_size=10000):
+        return adapter.write_networkx_graph(self.driver, G, label, batch_size)
 
     def read_networkx_graph(self, label, **kwargs):
         return adapter.read_networkx_graph(self.driver, label, **kwargs)
