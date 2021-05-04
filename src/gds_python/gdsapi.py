@@ -125,8 +125,6 @@ class GDSAPI:
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) > 0:
             exact_match = exact_matches[0]
-        elif len(sub_api) == 0:
-            exact_match = sub_api[0]
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
