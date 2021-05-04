@@ -120,7 +120,7 @@ class GDSAPI:
             subdir_api,            
             filter(lambda i: i['name'].startswith(name + ".") or i['name'] == name, self.api)))
 
-        GDSAPI.log.debug("MATCHES", list(map(lambda e: e['name'], sub_api)))
+        print("MATCHES", list(map(lambda e: e['name'], sub_api)))
         exact_match = None
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) > 0:
@@ -137,5 +137,5 @@ class GDSAPI:
             exact_match['name'] = self.context + ".%s" % name
             return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
-        GDSAPI.log.debug("METACALL %s" % name)
+        print("METACALL %s" % name)
         return GDSAPI(sub_api, self.driver, self.context + '.%s' % name)
