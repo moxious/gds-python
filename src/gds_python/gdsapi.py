@@ -1,13 +1,14 @@
 import logging
 from gds_python.networkx import adapter
 from typing import Any, Callable
+import json
 
 class GDSAPI:
     log = logging.getLogger('gds-python')
     reserved_fields = [
         'api', 'driver', 'context', 'generate_callable_neo4j_function', 
-        'generate_cypher', 'run',
-        'write_networkx_graph',
+        'generate_cypher', 'run', 'fn_description',
+        'write_networkx_graph', '__call__', 'input_signature',
         'read_networkx_graph'
     ]
 
@@ -69,37 +70,6 @@ class GDSAPI:
         cypher = cypher + "YIELD %s" % all_outputs + "\nRETURN %s" % all_outputs
         return cypher, params
 
-    def generate_callable_neo4j_function(self, context, api):
-        """Given a JSON description of an API function, this function returns another callable function that actually executes the
-        relevant cypher on the server and unpacks/delivers results"""       
-        def input_signature():
-            return { key: api[key] for key in ['name', 'description', 'inputs' ]}
-
-        def closure(*args):
-            required_arguments = list(filter(lambda e: e['required'], api['inputs']))
-            if len(args) < len(required_arguments) or len(args) > len(api['inputs']):
-                raise Exception(
-                    "Invalid input!  You provided %d arguments, when %d are required of %d total. The signature is %s" % (
-                        len(args), len(required_arguments), len(api['inputs']),
-                        json.dumps(input_signature(), indent=2)))
-
-            if args:
-                GDSAPI.log.debug("ARGS %s" % list(map(lambda e: str(e), args)))
-
-            with self.driver.session() as session:
-                cypher, params = self.generate_cypher(api, args)
-                GDSAPI.log.debug("RUNNING CYPHER %s WITH PARAMS %s" % (cypher, params))
-                # splat
-                results = session.run(cypher, **params)
-
-                # TODO -- for very large result sets this is probably a bad idea, this is just a quick POC
-                # This is just to unpack the "neo4j native format" to something friendlier.
-                return [dict(i) for i in results]
-        
-        closure.__name__ = api['name']
-        closure.__doc__ = api['description']
-        return closure
-
     def __getattribute__(self, name: str) -> Callable:
         """Dynamic function fetcher.
         The purpose of this is to allow the user to call any function they like, and dynamically "look up the function" within
@@ -138,8 +108,43 @@ class GDSAPI:
         if exact_match:
             # We have found the single API call the user was after.            
             exact_match['name'] = self.context + ".%s" % name
-            return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
+            return GDSAPI_Concrete_Function(sub_api, self.driver, here, exact_match)
 
         GDSAPI.log.debug("METACALL %s" % name)
         print("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
         return GDSAPI(sub_api, self.driver, here)
+
+class GDSAPI_Concrete_Function(GDSAPI):
+    """This class encapsulates a particular GDS function which can also contain a "sub-api".  For example,
+       gds.graph.create is a function, but also has sub-api (gds.graph.create.cypher).  This makes it a
+       special class of GDSAPI - a concrete function that contains sub-api"""
+    def __init__(self, api, driver, context, fn_description):
+        GDSAPI.__init__(self, api, driver, context)
+        self.fn_description = fn_description
+        self.__name__ = fn_description['name']
+        self.__doc__ = fn_description['description']
+        self.input_signature = { key: self.fn_description[key] for key in ['name', 'description', 'inputs' ]}
+
+    def __call__(self, *args):
+        """Given a JSON description of an API function, this function returns another callable function that actually executes the
+        relevant cypher on the server and unpacks/delivers results"""       
+
+        required_arguments = list(filter(lambda e: e['required'], self.fn_description['inputs']))
+        if len(args) < len(required_arguments) or len(args) > len(self.fn_description['inputs']):
+            raise Exception(
+                "Invalid input!  You provided %d arguments, when %d are required of %d total. The signature is %s" % (
+                    len(args), len(required_arguments), len(self.fn_description['inputs']),
+                    json.dumps(self.input_signature, indent=2)))
+
+        if args:
+            GDSAPI.log.debug("ARGS %s" % list(map(lambda e: str(e), args)))
+
+        with self.driver.session() as session:
+            cypher, params = self.generate_cypher(self.fn_description, args)
+            GDSAPI.log.debug("RUNNING CYPHER %s WITH PARAMS %s" % (cypher, params))
+            # splat
+            results = session.run(cypher, **params)
+
+            # TODO -- for very large result sets this is probably a bad idea, this is just a quick POC
+            # This is just to unpack the "neo4j native format" to something friendlier.
+            return [dict(i) for i in results]
