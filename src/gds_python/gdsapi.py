@@ -125,9 +125,9 @@ class GDSAPI:
         GDSAPI.log.debug("MATCHES", list(map(lambda e: e['name'], sub_api)))
         exact_match = None
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
-        if len(exact_matches) > 0:
+        if len(exact_matches) == 1:
             exact_match = exact_matches[0]
-            print("Exact match for %s" % here)
+            print("Exact match for %s: %s" % (here, exact_match))
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
