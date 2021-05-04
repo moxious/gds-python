@@ -141,5 +141,5 @@ class GDSAPI:
             return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
         GDSAPI.log.debug("METACALL %s" % name)
-        print("Recurse: %s" % here)
+        print("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
         return GDSAPI(sub_api, self.driver, here)
