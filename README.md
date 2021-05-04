@@ -2,7 +2,7 @@
 
 A pure python wrapper API for Neo4j GDS; permitting people in python notebook implementations to work with GDS as if it was a local library.
 
-This is a POC only at this point.  I've only tested it for the simplest possible functions, but extending to work with all of them is TBD.
+This is a proof of concept.
 
 ## How it works
 
@@ -12,8 +12,34 @@ This is a POC only at this point.  I've only tested it for the simplest possible
 procedure call, inputs, and outputs
 - The library defines a simple dynamic object that turns python API calls into functions which execute cypher on the server.
 - In python, `gds.graph.list()` turns into `CALL gds.graph.list()` in Cypher, and so forth.
+- Each function call in this library is exactly equivalent to a single Cypher call, run through the
+standard Neo4j python driver.
 
 ## Quickstart
+
+### Spark Notebook
+
+```
+%pip install --force-reinstall git+https://github.com/moxious/gds-python.git
+```
+
+Example spark notebook code:
+
+```
+import json
+from gds_python import GDS
+my_graph = "g"
+
+gds = GDS("url", "username", "password").connect()
+
+gds_graphs = gds.graph.list()
+
+if any(i['graphName'] == my_graph for i in gds_graphs):
+  print("Graph already exists; dropping before we continue")
+  print(gds.graph.drop(my_graph))
+```
+
+### Command Line
 
 ```
 poetry install
