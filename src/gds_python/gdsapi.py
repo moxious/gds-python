@@ -106,6 +106,8 @@ class GDSAPI:
         the API specification.  Functions which don't exist return lambdas that always raise Exceptions.  Functions that do
         exist return "callable neo4j functions" that execute the equivalent on the remote server.
         """
+        here = "%s.%s" % (self.context, name)
+
         if name in GDSAPI.reserved_fields:
             return object.__getattribute__(self, name)
 
@@ -125,7 +127,7 @@ class GDSAPI:
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) > 0:
             exact_match = exact_matches[0]
-            print("Exact match for %s with context %s" % (exact_match, self.context))
+            print("Exact match for %s" % here)
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
@@ -139,5 +141,5 @@ class GDSAPI:
             return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
         GDSAPI.log.debug("METACALL %s" % name)
-        print("Recurse: %s" % self.context + ".%s" % name)
-        return GDSAPI(sub_api, self.driver, self.context + '.%s' % name)
+        print("Recurse: %s" % here)
+        return GDSAPI(sub_api, self.driver, here)
