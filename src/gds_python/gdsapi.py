@@ -106,10 +106,10 @@ class GDSAPI:
         the API specification.  Functions which don't exist return lambdas that always raise Exceptions.  Functions that do
         exist return "callable neo4j functions" that execute the equivalent on the remote server.
         """
-        here = "%s.%s" % (self.context, name)
-
         if name in GDSAPI.reserved_fields:
             return object.__getattribute__(self, name)
+
+        here = "%s.%s" % (self.context, name)
 
         def subdir_api(api_fn):
             new_fn = api_fn.copy()
