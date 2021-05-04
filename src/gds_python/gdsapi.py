@@ -97,7 +97,7 @@ class GDSAPI:
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) == 1:
             exact_match = exact_matches[0]
-            print("Exact match for %s: %s" % (here, exact_match))
+            GDSAPI.log.debug("Exact match for %s: %s" % (here, exact_match))
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
@@ -110,8 +110,7 @@ class GDSAPI:
             exact_match['name'] = self.context + ".%s" % name
             return GDSAPI_Concrete_Function(sub_api, self.driver, here, exact_match)
 
-        GDSAPI.log.debug("METACALL %s" % name)
-        print("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
+        GDSAPI.log.debug("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
         return GDSAPI(sub_api, self.driver, here)
 
 class GDSAPI_Concrete_Function(GDSAPI):
