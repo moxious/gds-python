@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "gds-python"
-version = "0.0.1"
+version = "0.0.2"
 description = ""
-authors = ["Moxious <moxious@oldhat.org>"]
+authors = ["David Allen <david.allen@neo4j.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
