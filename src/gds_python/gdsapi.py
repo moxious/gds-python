@@ -125,7 +125,7 @@ class GDSAPI:
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) > 0:
             exact_match = exact_matches[0]
-            print("Exact match %s with context %s" % (exact_match, self.context))
+            print("Exact match for %s with context %s" % (exact_match, self.context))
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
@@ -139,4 +139,5 @@ class GDSAPI:
             return self.generate_callable_neo4j_function(self.context + ".%s" % name, exact_match)
 
         GDSAPI.log.debug("METACALL %s" % name)
+        print("Recurse: %s" % self.context + ".%s" % name)
         return GDSAPI(sub_api, self.driver, self.context + '.%s' % name)
