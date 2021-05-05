@@ -13,3 +13,10 @@ class GDS:
         self.api = self.generator.generate()
         print("Constructing GDS API")
         return GDSAPI(self.api, self.driver)
+
+    def connectAPOC(self):
+        print("Generating APOC API")
+        self.generator = APIGenerator(self.driver)
+        self.api = self.generator.generate()
+        print("Constructing GDS API")
+        return GDSAPI(self.api, self.driver, 'apoc')        
