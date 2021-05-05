@@ -67,7 +67,12 @@ class GDSAPI:
         output_names = map(lambda e: e['name'], api['outputs'])
         all_outputs = ", ".join(list(output_names))
 
-        cypher = cypher + "YIELD %s" % all_outputs + "\nRETURN %s" % all_outputs
+        # Only add a YIELD/RETURN clause if the proc is not VOID return type or empty.
+        if len(output_names) > 0:
+            cypher = cypher + "YIELD %s" % all_outputs + "\nRETURN %s" % all_outputs
+        else:
+            cypher = cypher + "RETURN true as finished"
+
         return cypher, params
 
     def __getattribute__(self, name: str) -> Callable:
