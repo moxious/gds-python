@@ -27,17 +27,22 @@ class APIGenerator:
                 name = row['name']
 
                 signature = row['signature']
-                sig = self.parse_signature(name, signature)
+                try:
+                    sig = self.parse_signature(name, signature)
 
-                api_call = {
-                    # Trim the leading 'gds.' which is the same for all of them.
-                    "name": name[4:],
-                    "mode": mode,
-                    "description": description,
-                    "inputs": sig['inputs'],
-                    "outputs": sig['outputs']
-                }
-                api_description.append(api_call)
+                    api_call = {
+                        # Trim the leading 'gds.' which is the same for all of them.
+                        "name": name[4:],
+                        "mode": mode,
+                        "description": description,
+                        "inputs": sig['inputs'],
+                        "outputs": sig['outputs']
+                    }
+                    api_description.append(api_call)
+                except Exception as e:
+                    raise Exception("Failed to parse %s with signature %s: %s" % (
+                        name, signature, str(e)
+                    ))
 
         return api_description
 
