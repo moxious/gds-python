@@ -1,6 +1,7 @@
 from typing import Any, Callable
 import json
 from neo4j import GraphDatabase
+import re
 import logging
 
 class APIGenerator:
@@ -54,6 +55,8 @@ class APIGenerator:
         """
         if paramlist.strip() == '':
             return {}
+        if paramlist.strip() == 'VOID':
+            return {}
 
         params = paramlist.strip().split(", ")
 
@@ -95,9 +98,10 @@ class APIGenerator:
 
         # EXAMPLE:
         # gds.wcc.write.estimate(graphName :: ANY?, configuration = {} :: MAP?) :: (requiredMemory :: STRING?, treeView :: STRING?, mapView :: MAP?, bytesMin :: INTEGER?, bytesMax :: INTEGER?, nodeCount :: INTEGER?, relationshipCount :: INTEGER?, heapPercentageMin :: FLOAT?, heapPercentageMax :: FLOAT?)
+        # gds.features.importer.skipOrphanNodes(skipOrphanNodes :: BOOLEAN?) :: VOID
 
         # This initial split separates into a front-half (name & inputs) and a back-half (outputs)
-        parts = signature.split(") :: (")
+        parts = re.split('\\) :: \\(?', signature)
         inputs = parts[0].replace(name + "(", "")
         outputs = parts[1].replace(")", "")
 
