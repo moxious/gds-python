@@ -64,9 +64,9 @@ class GDSAPI:
         # Add each parameter name in cypher syntax with $p0, $p1, $p2, etc.
         cypher = cypher + ", ".join(list(map(lambda e: "$%s" % e, cps))) + ")\n"
 
-        output_names = map(lambda e: e['name'], api['outputs'])
+        output_names = list(map(lambda e: e['name'], api['outputs']))
         all_outputs = ", ".join(list(output_names))
-
+        
         # Only add a YIELD/RETURN clause if the proc is not VOID return type or empty.
         if len(output_names) > 0:
             cypher = cypher + "YIELD %s" % all_outputs + "\nRETURN %s" % all_outputs
@@ -85,6 +85,7 @@ class GDSAPI:
             return object.__getattribute__(self, name)
 
         here = "%s.%s" % (self.context, name)
+        # print("HERE %s" % here)       
 
         def subdir_api(api_fn):
             new_fn = api_fn.copy()
@@ -97,12 +98,14 @@ class GDSAPI:
             subdir_api,            
             filter(lambda i: i['name'].startswith(name + ".") or i['name'] == name, self.api)))
 
+        # print(list(map(lambda e: e['name'], sub_api)))
+
         GDSAPI.log.debug("MATCHES", list(map(lambda e: e['name'], sub_api)))
         exact_match = None
         exact_matches = list(filter(lambda e: e['name'] == '', sub_api))
         if len(exact_matches) == 1:
             exact_match = exact_matches[0]
-            GDSAPI.log.debug("Exact match for %s: %s" % (here, exact_match))
+            # print("Exact match for %s: %s" % (here, exact_match))
 
         def failure():
             raise Exception("Method %s does not exist in the GDS API" % name)
@@ -115,7 +118,7 @@ class GDSAPI:
             exact_match['name'] = self.context + ".%s" % name
             return GDSAPI_Concrete_Function(sub_api, self.driver, here, exact_match)
 
-        GDSAPI.log.debug("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
+        # print("Recurse: %s with subapi consisting of %d elements" % (here, len(sub_api)))
         return GDSAPI(sub_api, self.driver, here)
 
 class GDSAPI_Concrete_Function(GDSAPI):

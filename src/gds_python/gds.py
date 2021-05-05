@@ -8,15 +8,14 @@ class GDS:
 
     def connect(self):
         """Call this method to verify connectivity to the Neo4j system, and to bootstrap the API"""
-        print("Generating GDS API")
+        # print("Generating GDS API")
         self.generator = APIGenerator(self.driver)
-        self.api = self.generator.generate()
-        print("Constructing GDS API")
+        self.api = self.generator.generate('gds')
+        # print("Constructing GDS API")
         return GDSAPI(self.api, self.driver)
 
     def connectAPOC(self):
-        print("Generating APOC API")
+        # print("Generating APOC API")
         self.generator = APIGenerator(self.driver)
-        self.api = self.generator.generate()
-        print("Constructing GDS API")
-        return GDSAPI(self.api, self.driver, 'apoc')        
+        apoc_api = self.generator.generate('apoc')
+        return GDSAPI(apoc_api, self.driver, 'apoc')        

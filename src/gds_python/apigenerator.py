@@ -8,13 +8,13 @@ class APIGenerator:
     def __init__(self, driver):
         self.driver = driver
 
-    def generate(self):
+    def generate(self, prefix='gds'):
         fetch_api = """
             call dbms.procedures() 
             yield name, signature, description, mode, defaultBuiltInRoles 
-            where name =~ 'gds.*' 
+            where name =~ '%s.*' 
             RETURN *;
-        """
+        """ % prefix
 
         api_description = []
 
@@ -33,7 +33,7 @@ class APIGenerator:
 
                     api_call = {
                         # Trim the leading 'gds.' which is the same for all of them.
-                        "name": name[4:],
+                        "name": name[len(prefix)+1:],
                         "mode": mode,
                         "description": description,
                         "inputs": sig['inputs'],
@@ -41,8 +41,8 @@ class APIGenerator:
                     }
                     api_description.append(api_call)
                 except Exception as e:
-                    raise Exception("Failed to parse %s with signature %s: %s" % (
-                        name, signature, str(e)
+                    print("Failed to parse %s with signature %s" % (
+                        name, signature
                     ))
 
         return api_description
@@ -99,11 +99,14 @@ class APIGenerator:
         # EXAMPLE:
         # gds.wcc.write.estimate(graphName :: ANY?, configuration = {} :: MAP?) :: (requiredMemory :: STRING?, treeView :: STRING?, mapView :: MAP?, bytesMin :: INTEGER?, bytesMax :: INTEGER?, nodeCount :: INTEGER?, relationshipCount :: INTEGER?, heapPercentageMin :: FLOAT?, heapPercentageMax :: FLOAT?)
         # gds.features.importer.skipOrphanNodes(skipOrphanNodes :: BOOLEAN?) :: VOID
+        # apoc.nodes.group(labels :: LIST? OF STRING?, groupByProperties :: LIST? OF STRING?, aggregations = [{*=count}, {*=count}] :: LIST? OF MAP?, config = {} :: MAP?) :: (nodes :: LIST? OF NODE?, relationships :: LIST? OF RELATIONSHIP?, node :: NODE?, relationship :: RELATIONSHIP?)
 
         # This initial split separates into a front-half (name & inputs) and a back-half (outputs)
         parts = re.split('\\) :: \\(?', signature)
         inputs = parts[0].replace(name + "(", "")
         outputs = parts[1].replace(")", "")
+
+        # print("INPUTS\n%s\nOUTPUTS\n%s\n" % (inputs, outputs))
 
         return {
             "inputs": self.parse_parameters(inputs),
