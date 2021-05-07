@@ -7,43 +7,51 @@ import logging
 class APIGenerator:
     def __init__(self, driver):
         self.driver = driver
+        self.registered_procedures = None
 
     def generate(self, prefix='gds'):
-        fetch_api = """
-            call dbms.procedures() 
-            yield name, signature, description, mode, defaultBuiltInRoles 
-            where name =~ '%s.*' 
-            RETURN *;
-        """ % prefix
-
         api_description = []
 
-        with self.driver.session() as session:
-            results = session.run(fetch_api)
+        # Fetch entire 
+        if self.registered_procedures is None:
+            fetch_api = """
+                CALL dbms.procedures() 
+                yield name, signature, description, mode, defaultBuiltInRoles 
+                RETURN *;
+            """
 
-            for row in results:
-                description = row['description']
-                mode = row['mode']
-                
-                name = row['name']
+            self.registered_procedures = []
+            with self.driver.session() as session:
+                results = session.run(fetch_api)
+                self.registered_procedures = [dict(i) for i in results]
+        
+        subapi = filter(lambda e: e['name'].startswith("%s." % prefix), self.registered_procedures)
 
-                signature = row['signature']
-                try:
-                    sig = self.parse_signature(name, signature)
+        for row in subapi:
+            description = row['description']
+            mode = row['mode']            
+            name = row['name']
+            signature = row['signature']
 
-                    api_call = {
-                        # Trim the leading 'gds.' which is the same for all of them.
-                        "name": name[len(prefix)+1:],
-                        "mode": mode,
-                        "description": description,
-                        "inputs": sig['inputs'],
-                        "outputs": sig['outputs']
-                    }
-                    api_description.append(api_call)
-                except Exception as e:
-                    print("Failed to parse %s with signature %s" % (
-                        name, signature
-                    ))
+            try:
+                # This one is not supported because of a particularly strange signature
+                if name == 'apoc.nodes.group': continue
+
+                sig = self.parse_signature(name, signature)
+
+                api_call = {
+                    # Trim the leading 'gds.' which is the same for all of them.
+                    "name": name[len(prefix)+1:],
+                    "mode": mode,
+                    "description": description,
+                    "inputs": sig['inputs'],
+                    "outputs": sig['outputs']
+                }
+                api_description.append(api_call)
+            except Exception as e:
+                print("Failed to parse %s with signature %s" % (
+                    name, signature
+                ))
 
         return api_description
 

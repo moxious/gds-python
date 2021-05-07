@@ -5,9 +5,12 @@ import json
 
 logging.getLogger('GDSAPI').setLevel('DEBUG')
 
-api = GDS(os.environ['NEO4J_URI'], os.environ['NEO4J_USERNAME'], os.environ['NEO4J_PASSWORD'])
-gds = api.connect()
-apoc = api.connectAPOC()
+neo4j = GDS(os.environ['NEO4J_URI'], os.environ['NEO4J_USERNAME'], os.environ['NEO4J_PASSWORD'])
+neo4j.connect()
+
+gds = neo4j.get_api('gds')
+apoc = neo4j.get_api('apoc')
+db = neo4j.get_api('db')
 
 print(apoc.periodic.submit('job', 'RETURN 1'))
 
@@ -20,8 +23,7 @@ print(apoc.periodic.submit('job', 'RETURN 1'))
 # Call an actual function
 print(gds.graph.list())
 
+apoc.periodic.submit('jobName', 'RETURN 1')
+
 # Example of a failing non-existent call
 # print(gds.foo())
-
-#result = gds.graph.create('g', { "Person": { "properties": [] } }, { "KNOWS": { "orientation": "UNDIRECTED" } })
-#print(result)
