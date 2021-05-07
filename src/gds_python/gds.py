@@ -29,7 +29,3 @@ class GDS:
         if not name in self.apis:
             return None
         return self.apis[name]
-
-    def connectAPOC(self):
-        self.apoc = Neo4j_Procedural_API(self.api_descriptions['apoc'], self.driver, 'apoc')
-        return self.apoc
