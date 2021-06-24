@@ -35,7 +35,7 @@ class APIGenerator:
 
             try:
                 # This one is not supported because of a particularly strange signature
-                if name == 'apoc.nodes.group': continue
+                if name == 'apoc.nodes.group' or name == 'apoc.systemdb.execute': continue
 
                 sig = self.parse_signature(name, signature)
 
